@@ -110,7 +110,7 @@ def get_updated_driving_forces(clusters, driving_forces, agents, opinions, updat
         # number of different opinions
         num_diffops = np.zeros(len(opinions))
         for a in agents_ids:
-            num_diffops[a] = np.sum([x for x in opinions[agents_ids] if x != a])
+            num_diffops[a] = np.sum([x for x in opinions[np.array(agents_ids).astype(int)] if x != a])
 
         # update driving forces
         for a in agents_ids:

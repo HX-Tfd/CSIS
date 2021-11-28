@@ -70,10 +70,9 @@ def to_graph(clusters, driving_forces, agents, opinions):
     num_clusters = clusters.shape[0]
     g.add_vertex(num_agents)
     cluster_assignment = np.zeros(num_agents)
-    print(clusters)
     for cluster in range(num_clusters):
         agents_in_cluster = clusters[cluster][:]
-        cluster_assignment[agents_in_cluster] = cluster
+        cluster_assignment[np.array(agents_in_cluster).astype(int)] = cluster
         for a1 in agents_in_cluster:
             for a2 in agents_in_cluster:
                 if a1 != a2:
