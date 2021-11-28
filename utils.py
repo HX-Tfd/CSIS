@@ -50,7 +50,6 @@ converts the following to graphs and output in {target_directory}:
     - opinion
 
 Input:
-
     agents:           numpy array of agent intrinsics
     clusters:         {"cluster_i": a list of agent ids}
     driving_forces:   numpy array of the driving forces
@@ -60,7 +59,6 @@ Input:
 
 
 The graphs this function produces:
-
     1.Opinion
     2.Driving force
     3.Agent intrinsics (can be many separate features)
@@ -72,8 +70,9 @@ def to_graph(clusters, driving_forces, agents, opinions):
     num_clusters = clusters.shape[0]
     g.add_vertex(num_agents)
     cluster_assignment = np.zeros(num_agents)
+    print(clusters)
     for cluster in range(num_clusters):
-        agents_in_cluster = clusters[cluster, :]
+        agents_in_cluster = clusters[cluster][:]
         cluster_assignment[agents_in_cluster] = cluster
         for a1 in agents_in_cluster:
             for a2 in agents_in_cluster:

@@ -4,11 +4,8 @@ import math
 
 k_alpha = 1
 k_beta = .5
-E_profit = 10
+E_profit = 100
 K_self_coupling = -2
-
-num_clusters = 5
-num_agents = 20
 
 '''
 Create {num_clusters} random clusters
@@ -36,7 +33,6 @@ def create_clusters(num_clusters, num_agents, cluster_specific=False):
     # initialise clusters
     cluster_elements = initialise_clusters(num_agents, num_clusters)
     cluster_elements = np.array(cluster_elements)
-    print("elems:", cluster_elements)
 
     # initialise opinions
     opinions = initialise_opinions(num_agents)
@@ -57,7 +53,7 @@ Retuns: a numpy array containing the driving force of each agent
 def initialise_clusters(num_agents, n):
     l = list(range(num_agents))
     random.shuffle(l)
-    res = np.array([l[i::n] for i in range(n)])
+    res = np.array([l[i::n] for i in range(n)], dtype=object)
     return res
 
 
@@ -108,7 +104,7 @@ def get_updated_driving_forces(clusters, driving_forces, agents, opinions, updat
     for n in range(len(clusters)):
         # agents_ids = clusters["cluster_{}".format(n)]
         clusters = np.array(clusters)
-        agents_ids = clusters[n, :]
+        agents_ids = clusters[n][:]
         cluster_size = len(agents_ids)
 
         # number of different opinions

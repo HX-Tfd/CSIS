@@ -2,6 +2,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
+from tqdm import tqdm
 
 import graph_tool.all as gt
 
@@ -50,8 +51,7 @@ def run_simulation(g, current_state, clusters, num_iters=100, dynamics=None, **k
 
     # simulation loop
     win = None
-    for i in range(num_iters):
-        print("iteration ", i)
+    for i in tqdm(range(num_iters), desc="running simulation ..."):
         #ret = state.iterate_sync(niter=10)
         win = gt.graph_draw(g,
                             pos=pos,
