@@ -1,9 +1,11 @@
 import numpy as np
 import random
 import math
+from scipy import stats
 
 k_alpha = 1
 k_beta = .5
+k_gamma = .5
 E_profit = 100
 K_self_coupling = -2
 
@@ -107,19 +109,14 @@ def get_updated_driving_forces(clusters, driving_forces, agents, opinions, updat
         agents_ids = clusters[n][:]
         cluster_size = len(agents_ids)
 
-        # number of different opinions
+        # number of different opinions within the same cluster
         num_diffops = np.zeros(len(opinions))
         for a in agents_ids:
             num_diffops[a] = np.sum([x for x in opinions[np.array(agents_ids).astype(int)] if x != a])
 
         # update driving forces
         for a in agents_ids:
-            # driving_forces
-            updated_driving_force[a] = E_profit + num_diffops[a] * k_alpha
-            #print(updated_driving_force)
-            #print("agent {} obtained a driving force of {}".format(a, updated_driving_force[a]))
-        #print("resulting global df: {}\n".format(updated_driving_force))
-
+            updated_driving_force[a] = E_profit + num_diffops[a] * (k_alpha + k_beta + k_gamma)
     return updated_driving_force  # currently it returns the unchanged agent intrinsics
 
 
@@ -133,39 +130,53 @@ Input:
 Returns:
        The new state f(current_state)
 '''
-def update_state(current_state):
-    return transition_function(current_state)
+def update_state(current_state, has_changed):
+    return transition_function(current_state, has_changed)
 
 
 '''
 You can define state transition functions here
+[agents, opinions, probs, driving_forces]
 '''
-def transition_function(state):
+def transition_function(state, has_changed):
     agents = state[0]
     state[2] = change_probs(state[3])
 
+    num_changes = 0
     for i in range(len(agents)):
+        # if has_changed[i]:
+        #     pass
+        # else:
         new_opinion = opinion(state[1][i], state[2][i])
+        if new_opinion != state[1][i]:
+            num_changes += 1
+            #     has_changed[i] = True
         state[1][i] = new_opinion
-    return state
+
+    return state, has_changed, num_changes
 
 
 '''
 Part of modelling the transition function
-
+into [a, b]
 '''
-def normalise_driving_force(driving_forces, hi):
-    return driving_forces/hi
-
+def normalise_driving_force(driving_forces, a, b):
+    min_val = np.amin(driving_forces)
+    #max_val = np.amax(driving_forces)
+    max_val = ((len(driving_forces) * (k_alpha+k_beta+k_gamma)) + E_profit)
+    #return (b-a) * (driving_forces-min_val)/(max_val-min_val) - a
+    return ((b-a)* driving_forces/max_val)+a
 
 '''
 compute the probability of change given a driving force    
 '''
 def change_probs(driving_forces):
-    hi = np.sum(driving_forces) # the maximum possible driving force
-    lo = None
-    driving_forces = normalise_driving_force(driving_forces, hi )
-    probs = [math.erf(driving_forces[i]) if driving_forces[i] < hi else math.erf(hi) for i in range(len(driving_forces)) ]
+    driving_forces = normalise_driving_force(driving_forces, -2, 2)
+    print(driving_forces)
+    probs = stats.norm.cdf(driving_forces)
+    #probs = np.repeat(0.01, len(driving_forces))
+    #probs = driving_forces/(len(driving_forces) * k_alpha + E_profit)
+    print(probs)
     return probs
 
 
@@ -175,5 +186,5 @@ The new opinion {x} of an agent given the prob. of change {p}
 Can serve as a state transition function
 '''
 def opinion(x, p):
-    res = (np.random.rand(1))[0]
+    res = (np.random.rand(1))
     return 1-x if res < p else x

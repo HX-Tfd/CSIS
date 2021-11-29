@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 from tqdm import tqdm
+import functools
 
 import graph_tool.all as gt
 
@@ -42,17 +43,20 @@ def run_simulation(g, current_state, clusters, num_iters=100, dynamics=None, **k
         state = dynamics(**kwargs)
     else:
         #default
-        #state = gt.IsingGlauberState(g, beta=1.5 / 10)
+        state = gt.IsingGlauberState(g, beta=1.5 / 10)
         pass
 
     # graph properties
     pos = gt.sfdp_layout(g)
     deg = g.degree_property_map("in")
+    centrality = gt.betweenness(g)[1]
+    has_changed = [False for i in range(len(current_state[0]))]
 
     # simulation loop
     win = None
+    num_changes_list = []
     for i in tqdm(range(num_iters), desc="running simulation ..."):
-        #ret = state.iterate_sync(niter=10)
+        state.iterate_sync(niter=num_iters)
         win = gt.graph_draw(g,
                             pos=pos,
                             vertex_fill_color=g.vp.opinion,
@@ -62,13 +66,40 @@ def run_simulation(g, current_state, clusters, num_iters=100, dynamics=None, **k
                             main=False,
                             vertex_size=25,
                             vertex_pen_width=2,
-                            edge_pen_width=2)
+                            edge_pen_width=2,
+                            edge_color='k'
+                            #output="it{}.pdf".format(i)
+                            )
         current_state[3] = experiment.get_updated_driving_forces(clusters=clusters,
                                                                  driving_forces=current_state[1],
                                                                  agents=current_state[0],
                                                                  opinions=current_state[1],
                                                                  update_agents=False)
-        current_state = experiment.update_state(current_state)
+        current_state, has_changed, num_changes = experiment.update_state(current_state, has_changed)
+        if functools.reduce(lambda a, b: a and b, has_changed):
+            print("all agents have changed")
+            break
+        #plot changes
+        num_changes_list.append(num_changes)
 
         # locally update graph properties
         utils.update_property(g, prop_name="opinion", opinion=current_state[1])
+
+
+    n_bins_changes = len(has_changed)
+    n_bins_iters = num_iters
+    fig, axs = plt.subplots(1, 2, tight_layout = True)
+    y = num_changes_list
+    axs[0].hist(y, bins=n_bins_changes)
+    axs[0].set_title('number of changes')
+    axs[0].set_ylabel('iteration of changes')
+    axs[0].set_xlabel('number of agents')
+
+
+    axs[1].plot(np.linspace(1, n_bins_iters, num=n_bins_iters, dtype=int), num_changes_list)
+    axs[0].set_title('number of changes in each iteration')
+    axs[1].set_ylabel('number of changed agents')
+    axs[1].set_xlabel('iteration')
+    plt.savefig("experiment")
+    plt.show()
+
