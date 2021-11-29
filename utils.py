@@ -1,7 +1,6 @@
 import numpy as np
 import graph_tool.all as gt
 import os
-import matplotlib.pyplot as plt
 
 import os
 
@@ -113,3 +112,5 @@ def update_property(g, prop_name, **kwargs):
         #     g.vp.driving_force[v] = driving_force[v]
     else:
         raise RuntimeError("unknown property name: ", prop_name)
+
+

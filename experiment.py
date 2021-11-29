@@ -3,6 +3,8 @@ import random
 import math
 from scipy import stats
 
+from model import *
+
 k_alpha = 1
 k_beta = .5
 k_gamma = .5
@@ -170,13 +172,24 @@ def normalise_driving_force(driving_forces, a, b):
 '''
 compute the probability of change given a driving force    
 '''
-def change_probs(driving_forces):
-    driving_forces = normalise_driving_force(driving_forces, -2, 2)
-    print(driving_forces)
-    probs = stats.norm.cdf(driving_forces)
+def change_probs(driving_forces, use_nn=False):
+    #probs = a_0+a_1*driving_forces+a_2*driving_forces**2+a_3*driving_forces**3
     #probs = np.repeat(0.01, len(driving_forces))
     #probs = driving_forces/(len(driving_forces) * k_alpha + E_profit)
-    print(probs)
+    if use_nn:
+        model = SimpleFCNet(num_layers=1,
+                            in_dim=len(driving_forces),
+                            out_dim=len(driving_forces),
+                            hidden_dim=2*len(driving_forces))
+        probs = model(driving_forces, )
+        # train(model, probs, probs_)
+        # TODO: get probs_ from the dataset and keep the
+        #  trained model somewhere so that we don't have to
+        #  load it in each simulation step
+    else:
+        driving_forces = normalise_driving_force(driving_forces, -2, 2)
+        probs = stats.norm.cdf(driving_forces)
+
     return probs
 
 

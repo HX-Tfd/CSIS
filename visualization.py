@@ -79,13 +79,13 @@ def run_simulation(g, current_state, clusters, num_iters=100, dynamics=None, **k
         if functools.reduce(lambda a, b: a and b, has_changed):
             print("all agents have changed")
             break
-        #plot changes
+
         num_changes_list.append(num_changes)
 
         # locally update graph properties
         utils.update_property(g, prop_name="opinion", opinion=current_state[1])
 
-
+    # plot simulation statistics
     n_bins_changes = len(has_changed)
     n_bins_iters = num_iters
     fig, axs = plt.subplots(1, 2, tight_layout = True)
@@ -101,6 +101,6 @@ def run_simulation(g, current_state, clusters, num_iters=100, dynamics=None, **k
     axs[0].set_title('number of changes in each iteration')
     axs[1].set_ylabel('number of changed agents')
     axs[1].set_xlabel('iteration')
-    plt.savefig("experiment")
+    plt.savefig("experiment_exp")
     plt.show()
 
