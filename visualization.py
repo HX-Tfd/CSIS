@@ -90,11 +90,12 @@ def run_simulation(g, current_state, clusters, num_iters=100, dynamics=None, **k
     n_bins_iters = num_iters
     fig, axs = plt.subplots(1, 2, tight_layout = True)
     y = num_changes_list
+    plt.title(r'$k_\alpha = {}, k_\beta = {}, k_\gamma = {}$'.format(
+        experiment.k_alpha, experiment.k_beta, experiment.k_gamma))
     axs[0].hist(y, bins=n_bins_changes)
     axs[0].set_title('number of changes')
     axs[0].set_ylabel('iteration of changes')
     axs[0].set_xlabel('number of agents')
-
 
     axs[1].plot(np.linspace(1, n_bins_iters, num=n_bins_iters, dtype=int), num_changes_list)
     axs[0].set_title('number of changes in each iteration')
