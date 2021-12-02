@@ -5,6 +5,9 @@ from scipy import stats
 
 from model import *
 
+'''
+These are default parameters, set them differently in main.py
+'''
 k_alpha = 1
 k_beta = .5
 k_gamma = .5
@@ -177,17 +180,13 @@ def change_probs(driving_forces, use_nn=False):
     #probs = np.repeat(0.01, len(driving_forces))
     #probs = driving_forces/(len(driving_forces) * k_alpha + E_profit)
     if use_nn:
-        model = SimpleFCNet(num_layers=1,
-                            in_dim=len(driving_forces),
-                            out_dim=len(driving_forces),
-                            hidden_dim=2*len(driving_forces))
-        probs = model(driving_forces, )
-        # train(model, probs, probs_)
+        pass
         # TODO: get probs_ from the dataset and keep the
         #  trained model somewhere so that we don't have to
         #  load it in each simulation step
+        #  an example initialization of the model is given in visualization.py
     else:
-        driving_forces = normalise_driving_force(driving_forces, -2, 2)
+        driving_forces = normalise_driving_force(driving_forces, -2, 2) # be aware of the normalization range for different distributions
         probs = stats.norm.cdf(driving_forces)
 
     return probs
