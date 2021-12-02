@@ -61,7 +61,7 @@ def train(model, x, y, timestep, writer=None):
 
     for i in tqdm(range(num_epochs), desc="training model ..."):
         def closure():
-            optimizer.xero_grad()
+            optimizer.zero_grad()
             res = model(x)
             model_loss = loss(res, y) #TODO: create a meaningful loss function
             model_loss.backward()
