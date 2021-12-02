@@ -71,9 +71,3 @@ def train(model, x, y, timestep, writer=None):
                 print("epoch {}: loss = {}".format(i, model_loss))
             return model_loss
         optimizer.step(closure())
-
-
-distribution = SimpleFCNet(num_layers=1,
-                        in_dim=20,
-                        out_dim=20,
-                        hidden_dim=2 * 20)
