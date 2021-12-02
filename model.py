@@ -77,6 +77,3 @@ distribution = SimpleFCNet(num_layers=1,
                         in_dim=20,
                         out_dim=20,
                         hidden_dim=2 * 20)
-
-a = torch.randn(20)
-print(distribution(a))
