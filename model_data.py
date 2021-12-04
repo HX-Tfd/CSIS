@@ -30,11 +30,11 @@ class SimpleFCNet(nn.Module):
                 layers.append(self.fc_in)
                 layers.append(self.relu)
             elif i == self.num_layers:
-                #layers.append(nn.Dropout(p=0.8))
+                layers.append(nn.Dropout(p=0.8))
                 layers.append(self.fc_out)
                 layers.append(self.sigm)
             else:
-                #layers.append(nn.Dropout(p=0.8))
+                layers.append(nn.Dropout(p=0.8))
                 layers.append(self.fc_hidd)
                 layers.append(self.relu)
 
@@ -118,7 +118,6 @@ def train_global(model, parameters_to_fit, driving_forces,  all_opinions, y, wri
 
 
     # training
-    res = None
     for i in tqdm(range(dataset_length), desc="training model ..."):
         optimizer.zero_grad()
 
@@ -126,6 +125,8 @@ def train_global(model, parameters_to_fit, driving_forces,  all_opinions, y, wri
         inp_2 = all_opinions[shuffled_ids[i]].detach()
         inp = torch.cat((parameters_to_fit, inp_1, inp_2)).float()
         x = model(inp) #opinions
+        x = torch.round(x)
+        print(x)
 
         model_loss = loss(x, y) # mean squared diff of opinions
         model_loss.backward()

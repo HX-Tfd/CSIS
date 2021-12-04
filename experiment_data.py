@@ -252,9 +252,9 @@ def run_simulation_global(cluster_index, with_return=False):
     num_agents_in_cluster = cluster_size[cluster_index]
 
     # initial guesses
-    k_alpha_model = .1
-    k_beta_model = 1
-    k_gamma_model = 2
+    k_alpha_model = .5
+    k_beta_model = 2
+    k_gamma_model = 10
     E_profit_model = 15
 
     parameters_to_fit = torch.tensor(
