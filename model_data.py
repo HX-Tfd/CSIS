@@ -30,9 +30,11 @@ class SimpleFCNet(nn.Module):
                 layers.append(self.fc_in)
                 layers.append(self.relu)
             elif i == self.num_layers:
+                #layers.append(nn.Dropout(p=0.8))
                 layers.append(self.fc_out)
                 layers.append(self.sigm)
             else:
+                #layers.append(nn.Dropout(p=0.8))
                 layers.append(self.fc_hidd)
                 layers.append(self.relu)
 
@@ -44,12 +46,13 @@ class SimpleFCNet(nn.Module):
 
 # x = [parameters_to_fit, driving_forces]
 def train(model, parameters_to_fit, driving_forces, y, timestep, all_opinion, writer=None):
-    num_epochs = 100
-    learning_rate = 0.001
-    optimizer = torch.optim.Adam(params=
+    num_epochs = 10
+    learning_rate = 0.01
+    optimizer = torch.optim.SGD(params=
                                  [{'params': model.parameters()},
                                   {'params':parameters_to_fit}],
-                                 lr=learning_rate)
+                                 lr=learning_rate,
+                                 momentum=0.8)
     loss = nn.MSELoss()
 
     def opinion(x, p):
@@ -81,15 +84,54 @@ def train(model, parameters_to_fit, driving_forces, y, timestep, all_opinion, wr
         # torch cannot handle conditional updates
         x = res #get_opinion(all_opinion[timestep - 1], res, timestep)
         model_loss = loss(x, y) # TODO: create a meaningful loss function
+        print(model_loss)
+        model_loss.backward()
+        optimizer.step()
         if writer is not None:
             writer.add_scalar('training loss time step {}'.format(timestep), model_loss, i)
-        else:
-            #print("epoch {}: loss = {}".format(i, model_loss))
-            pass
-        model_loss.backward()
-        #print("grad: ", params[0].grad)
-        optimizer.step()
     print("params:", parameters_to_fit)
     print("pgrad: ", parameters_to_fit.grad)
 
     return get_opinion(all_opinion[timestep - 1], res, timestep)
+
+
+'''
+parameters_to_fit: N * 4
+driving_forces: N * num_agents 
+all_opinions: N * num_agents 
+
+y: real stat of opinions from the data
+'''
+def train_global(model, parameters_to_fit, driving_forces,  all_opinions, y, writer=None):
+    num_epochs = 50
+    learning_rate = 0.0001
+    optimizer = torch.optim.Adam(params=
+                                 [{'params': model.parameters()},
+                                  {'params':parameters_to_fit}],
+                                 lr=learning_rate)
+    loss = nn.MSELoss()
+    dataset_length = len(driving_forces)
+    print(dataset_length)
+
+    # shuffle dataset
+    shuffled_ids = torch.randperm(dataset_length)
+
+
+    # training
+    res = None
+    for i in tqdm(range(dataset_length), desc="training model ..."):
+        optimizer.zero_grad()
+
+        inp_1 = driving_forces[shuffled_ids[i]].detach()
+        inp_2 = all_opinions[shuffled_ids[i]].detach()
+        inp = torch.cat((parameters_to_fit, inp_1, inp_2)).float()
+        x = model(inp) #opinions
+
+        model_loss = loss(x, y) # mean squared diff of opinions
+        model_loss.backward()
+        optimizer.step()
+        if writer is not None:
+            writer.add_scalar('training loss', model_loss, i)
+
+    print("params:", parameters_to_fit)
+    print("pgrad: ", parameters_to_fit.grad)

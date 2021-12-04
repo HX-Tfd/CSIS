@@ -6,8 +6,10 @@ import torch
 import torch.nn as nn
 from tqdm import tqdm
 
+from torch.utils.tensorboard import SummaryWriter
 
-from model_data import SimpleFCNet, train
+
+from model_data import SimpleFCNet, train, train_global
 from dataio import (num_agents,
                    opinion_timeline_agents,
                    max_node_array,
@@ -132,7 +134,9 @@ def normalise_driving_force(driving_forces, a, b):
     # return (b-a) * (driving_forces-min_val)/(max_val-min_val) - a
     return ((b - a) * driving_forces / max_val) + a
 
-
+'''
+get opinions from the model
+'''
 def opinion(x, p):
     res = (np.random.rand(1))[0]
     return 1 - x if res < p else x
@@ -144,6 +148,19 @@ def opinion_no_return(x, p):
     else:
         return opinion(x, p)
 
+def get_opinion(current_opinion, probs, step):
+    opinions = []
+    for agent in range(len(probs)):
+        new_state_no_return = opinion_no_return(current_opinion[agent], probs[agent])
+        opinions.append(new_state_no_return)
+    opinions = torch.tensor(opinions).float()
+    opinions.requires_grad = True
+    return opinions
+
+
+'''
+update state and driving force
+'''
 
 def update(driving_forces, edge_props, cluster_index, current_state):
     new_states = []
@@ -168,8 +185,8 @@ def run_simulation(cluster_index):
 
     k_alpha_model = .1
     k_beta_model = 1
-    k_gamma_model = 2
-    E_profit_model = 15
+    k_gamma_model = 5
+    E_profit_model = 10
 
     # initialise clusters and agents
     initial_opinion = get_initial_opinions(cluster_index)
@@ -201,8 +218,21 @@ def run_simulation(cluster_index):
         y = torch.tensor(y).float()
 
         # fit the parameters and get new opinions
-        new_opinion = train(distribution, parameters_to_fit, driving_forces, y, step, all_opinions, timestep=step)
+        writer = SummaryWriter()
+        new_opinion = train(model=distribution,
+                            parameters_to_fit=parameters_to_fit,
+                            driving_forces=driving_forces,
+                            y=y,
+                            all_opinion=all_opinions,
+                            timestep=step,
+                            writer=writer)
         all_opinions.append(new_opinion) # can be used later for the global training
+
+        # plot parameter changes
+        writer.add_scalar('$k_alpha$ step {}', parameters_to_fit[0], step)
+        writer.add_scalar('$k_beta$ step {}', parameters_to_fit[1], step)
+        writer.add_scalar('$k_gamma$ step {}', parameters_to_fit[2], step)
+        writer.add_scalar('$E_profit$ step {}', parameters_to_fit[3], step)
 
         # update driving forces
         driving_forces = update_driving_forces_model(new_opinion, driving_forces, edge_props_this_cluster,
@@ -214,18 +244,18 @@ def run_simulation(cluster_index):
         driving_forces = torch.tensor(driving_forces, requires_grad=False)
         print(parameters_to_fit)
 
-def run_simulation_global(cluster_index):
+'''
+simulate time evolution cluster-specifically (for all timesteps)
+'''
+def run_simulation_global(cluster_index, with_return=False):
     edge_props_this_cluster = edge_properties[cluster_index]
     num_agents_in_cluster = cluster_size[cluster_index]
 
-    #initial guesses
+    # initial guesses
     k_alpha_model = .1
     k_beta_model = 1
     k_gamma_model = 2
     E_profit_model = 15
-
-    # initialise clusters and agents
-    initial_opinion = get_initial_opinions(cluster_index)
 
     parameters_to_fit = torch.tensor(
         [k_alpha_model,
@@ -234,41 +264,87 @@ def run_simulation_global(cluster_index):
          E_profit_model], requires_grad=True
     )
 
-    # initialise driving force
-    driving_forces = update_driving_forces_cluster_specific(edge_props_this_cluster, cluster_index, initial_opinion)
-    driving_forces = torch.tensor(driving_forces)
-
-    distribution = SimpleFCNet(
-        num_layers=1,
-        in_dim=num_agents_in_cluster + 4,
-        out_dim=num_agents_in_cluster,
-        hidden_dim=2 * (num_agents_in_cluster)
+    # initialise model
+    model = SimpleFCNet(
+        num_layers=2,
+        in_dim=2*num_agents_in_cluster + 4,   # [dfs, ops, params]
+        out_dim=num_agents_in_cluster,        # new opinions
+        hidden_dim=4 * (num_agents_in_cluster)
     )
 
+    '''
+    the code below is trained for {n} iterations
+    '''
+    num_simulation_steps = 1
+    for s in range(num_simulation_steps):
+        print("simulation round ", s)
+        # initialise clusters and agents
+        opinion = torch.tensor(get_initial_opinions(cluster_index))
 
-    all_opinions = []
-    all_opinions.append(initial_opinion)
+        # initialise driving force
+        driving_force = torch.tensor(update_driving_forces_cluster_specific(edge_props_this_cluster, cluster_index, opinion))
 
-    for step in tqdm(range(10), desc="simulation step "):
-        y = opinion_timeline_agents[cluster_range[cluster_index][0]:cluster_range[cluster_index][1], step]
-        y = torch.tensor(y).float()
 
-        # fit the parameters and get new opinions
-        new_opinion =1
-        all_opinions.append(new_opinion) # can be used later for the global training
+        # init simulation data
+        writer = SummaryWriter()
+        all_opinions, driving_forces = [], []
+        all_opinions.append(opinion)
+        driving_forces.append(driving_force)
 
-        # update driving forces
-        driving_forces = update_driving_forces_model(new_opinion, driving_forces, edge_props_this_cluster,
-                                                     cluster_index,
-                                                     parameters_to_fit[0].float(),
-                                                     parameters_to_fit[1].float(),
-                                                     parameters_to_fit[2].float(),
-                                                     parameters_to_fit[3].float())
-        driving_forces = torch.tensor(driving_forces, requires_grad=False)
+        num_timesteps = 5
+        for step in tqdm(range(num_timesteps), desc="simulation step "):
+            # add summary
+            writer.add_scalar('num new opinions, round{}'.format(s), torch.sum(opinion), step)
+            writer.add_scalar('max driving force, round{}'.format(s), torch.amax(driving_force), step)
+            writer.add_scalar('min driving force, round{}'.format(s), torch.amin(driving_force), step)
 
-    #train globally
-    train(distribution, parameters_to_fit, driving_forces, y, step, all_opinions)
+
+            # get opinions from the data at step <step>
+            y = opinion_timeline_agents[cluster_range[cluster_index][0]:cluster_range[cluster_index][1], step]
+            y = torch.tensor(y).float()
+
+            # fit the parameters and get new opinions
+            new_opinion = model(torch.cat((driving_force, opinion, parameters_to_fit)).float())
+
+            # update has_changed we without return, i.e.
+            # if an agent changes its opinion from 0 to 1 then it stays
+            # not not vice versa, since 1 is the new medication
+            new_opinion_ = []
+            if not with_return:
+                for i in range(num_agents_in_cluster):
+                    if opinion[i] == 0 and new_opinion[i] == 1:
+                        new_opinion_.append(new_opinion[i])
+                    else:
+                        new_opinion_.append(opinion[i])
+
+            all_opinions.append(torch.tensor(new_opinion_))
+            opinion = torch.tensor(new_opinion_) # update old opinion
+
+            # update driving forces
+            driving_force = update_driving_forces_model(opinion, driving_force, edge_props_this_cluster,
+                                                         cluster_index,
+                                                         parameters_to_fit[0].float(),
+                                                         parameters_to_fit[1].float(),
+                                                         parameters_to_fit[2].float(),
+                                                         parameters_to_fit[3].float())
+            driving_force = torch.tensor(driving_force)
+            driving_forces.append(driving_force)
+
+        #train globally
+        train_global(model,
+                     parameters_to_fit, driving_forces, all_opinions,  #x
+                     y ) #y
+
+    print("fitted parameters: ", parameters_to_fit)
+
+
 '''
+What to finish:
+-train globally
+-train for all clusters
+-modify NW that it takes [df, params, ops] as input and outputs new_ops
+-maybe use VAE/auto decoder
+
 
 What experiments to do:
 
@@ -285,5 +361,6 @@ Random:
 Different loss functions
 
 '''
-
-run_simulation(0)
+import os
+os.system("rm -rf runs")
+run_simulation_global(0)
