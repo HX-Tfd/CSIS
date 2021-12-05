@@ -39,11 +39,12 @@ For graph-tool, please follow the official installation instructions on https://
  - visualization.py
    - run_simulation
  
- ## Run Data-Driven Experiments
+ ## Data-Driven Experiments
  The scripts for the data-driven experiments described in the report are:
  ```
  experiment_data.py
  model_data.py
+ dataio.py
  ```
  
- You can adjust the model and the configurations in these files and run ```python  experiment_data.py``` directly
+ These are refactored from ```testing_ground.ipynb```
