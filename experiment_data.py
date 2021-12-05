@@ -6,6 +6,8 @@ import torch
 import torch.nn as nn
 from tqdm import tqdm
 
+import matplotlib.pyplot as plt
+
 from torch.utils.tensorboard import SummaryWriter
 
 
@@ -176,6 +178,8 @@ def update(driving_forces, edge_props, cluster_index, current_state):
     return new_states, new_driving_force
 
 
+
+
 '''
 Run simulation with the real data
 '''
@@ -275,7 +279,7 @@ def run_simulation_global(cluster_index, with_return=False):
     '''
     the code below is trained for {n} iterations
     '''
-    num_simulation_steps = 1
+    num_simulation_steps = 20
     for s in range(num_simulation_steps):
         print("simulation round ", s)
         # initialise clusters and agents
@@ -291,7 +295,7 @@ def run_simulation_global(cluster_index, with_return=False):
         all_opinions.append(opinion)
         driving_forces.append(driving_force)
 
-        num_timesteps = 5
+        num_timesteps = 10
         for step in tqdm(range(num_timesteps), desc="simulation step "):
             # add summary
             writer.add_scalar('num new opinions, round{}'.format(s), torch.sum(opinion), step)
@@ -313,6 +317,7 @@ def run_simulation_global(cluster_index, with_return=False):
             if not with_return:
                 for i in range(num_agents_in_cluster):
                     if opinion[i] == 0 and new_opinion[i] == 1:
+                        print("change")
                         new_opinion_.append(new_opinion[i])
                     else:
                         new_opinion_.append(opinion[i])
@@ -361,6 +366,14 @@ Random:
 Different loss functions
 
 '''
-import os
-os.system("rm -rf runs")
-run_simulation_global(0)
+# import os
+# os.system("rm -rf runs")
+# run_simulation_global(0)
+
+distribution = SimpleFCNet(
+        num_layers=1,
+        in_dim=100 + 4,
+        out_dim=100,
+        hidden_dim=2 * (100)
+)
+print(distribution.net)

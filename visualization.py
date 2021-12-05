@@ -19,7 +19,6 @@ def show_graph(g, dynamic=True):
     # try different layouts
     pos = gt.sfdp_layout(g)
     deg = g.degree_property_map("in")
-    # draw_order = np.concatenate(clusters)  # by cluster
     fill_color = g.vp.opinion #g.graph_properties["opinion"]
 
     if dynamic:
@@ -52,12 +51,6 @@ def run_simulation(g, current_state, clusters, num_iters=100, dynamics=None, **k
 
     num_agents = len(current_state[0])
     has_changed = [False for i in range(num_agents)]
-
-    # initialise parameterized distribution (for demonstration only, not used for the visualization loop)
-    distribution = model.SimpleFCNet(num_layers=1,
-                        in_dim=num_agents,
-                        out_dim=num_agents,
-                        hidden_dim=2 * num_agents)
 
     # simulation loop
     win = None

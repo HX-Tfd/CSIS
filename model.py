@@ -10,8 +10,6 @@ the distribution induced by the driving forces
 
 outputs a vector containing the probabilities of change
 '''
-#TODO: maybe use other non-linearities for the hidden layers (e.g. ReLU)
-#TODO (optional): maybe use batchnorm
 class SimpleFCNet(nn.Module):
 
     def __init__(self, num_layers, in_dim, out_dim, hidden_dim, use_bn=False):
@@ -26,25 +24,28 @@ class SimpleFCNet(nn.Module):
         # self.bn = nn.BatchNorm1d()
 
         layers = []
-        for i in range(self.num_layers + 2):
+        for i in range(self.num_layers):
             # if self.use_bn:
             #     layers.append()
             if i == 0:
+                print(i)
                 layers.append(self.fc_in)
-            elif i == self.num_layers + 1:
+            elif i == self.num_layers:
+                print(i)
                 layers.append(self.fc_out)
             else:
                 layers.append(self.fc_hidd)
             layers.append(self.sigm)
         self.net = nn.Sequential(*layers)
+        print(self.net)
 
 
     def forward(self, x):
         return self.net(x)
 
 '''
-x: driving forces produced by the model 
-y: opinion vector obtained from the data (or change of opinion) 
+x: driving forces produced by the model
+y: opinion vector obtained from the data (or change of opinion)
 timestep: an integer denoting the timestep of the simulation, used by summarywriter
 writer: summary writer for training (global), none is used by default
 
@@ -63,6 +64,7 @@ def train(model, x, y, timestep, writer=None):
         def closure():
             optimizer.zero_grad()
             res = model(x)
+            # convert to opinioins
             model_loss = loss(res, y) #TODO: create a meaningful loss function
             model_loss.backward()
             if writer is not None:

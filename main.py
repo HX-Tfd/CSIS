@@ -1,11 +1,8 @@
 from graph_tool.all import *
-import utils, experiment, visualization
-
-#TODO: define a function for the simulation using the dataset
-#TODO: don't forget to convert numpy array to torch.tensor() before passing it into the model
-# and maybe convert tensors back to numpy if necesary
-
-#TODO: design choice: either simulate the model and
+import utils, experiment, visualization, model
+# import torch
+# import torch.nn as nn
+# from torch.utils.data import dataloader
 
 #TODO (add into <Future Work> section of the report): alternatively, we could model the soft-opinion instead of
 # the probability of change, which will give us an action distribution. The reward function can be defined in
@@ -31,7 +28,6 @@ def main():
     experiment.k_beta = 1 # friendship
     experiment.k_gamma = 2 # advice
     experiment.E_profit = 15
-    experiment.K_self_coupling = -1
 
     # initialization
     num_clusters = 6
