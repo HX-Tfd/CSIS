@@ -1,4 +1,4 @@
-# CSIS: Individual Advantage and Group Identities in Agent-Based Opinion Formation
+# Individual Advantage and Group Identities in Agent-Based Opinion Formation
 
 ## About the project
 In  this  project,  we  aim  to  gain  a  better  understanding of opinion  spreading  in  medical communities  and  its  dependency  on  relations  between distinct  agents  in  respective  city clusters.  We model physicians as agents and based on the adoption dates of a new drug and adjacency matrices obtained from data concerning relationships between physicians inseveral cities train a machine learning model consisting of neural network layers with an algorithm that is physically inspired by a process of diffusion.  
