@@ -21,7 +21,7 @@ seaborn/0.11.0
 
 For graph-tool, please follow the official installation instructions on https://graph-tool.skewed.de/
 
-## Run RandomExperiments
+## Run Random Experiments
  We  provide  the  opportunity  to  experimentwith different initialization schemes in our code (see ```experiment.py```) and to visualise thesimulation 
  dynamically using the graph-tool module (see ```visualization.py```).  
  
