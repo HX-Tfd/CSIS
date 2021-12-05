@@ -9,7 +9,7 @@ The goal of it is to fit four parameters we have identified to be influential in
 ## Dependencies
 The code has been tested in python 3.8 with the following dependencies:
 
-
+```
 tqdm
 torch/1.7.0
 graph-tool/2.4.3
@@ -17,7 +17,7 @@ matplotlib/3.4.3
 numpy/1.21.2
 pandas/1.3.4
 seaborn/0.11.0
-
+```
 
 For graph-tool, please follow the official installation instructions on https://graph-tool.skewed.de/
 
