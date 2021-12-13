@@ -4,11 +4,6 @@ import utils, experiment, visualization, model
 # import torch.nn as nn
 # from torch.utils.data import dataloader
 
-#TODO (add into <Future Work> section of the report): alternatively, we could model the soft-opinion instead of
-# the probability of change, which will give us an action distribution. The reward function can be defined in
-# terms of the experiment parameters (coupling constants, profit etc.). In this way, one can use reinforcement
-# learning algorithms to fit the action of each agent
-
 '''
 A simulation loop can look like (simplified):
 
